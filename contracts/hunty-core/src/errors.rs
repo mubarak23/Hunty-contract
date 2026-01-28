@@ -1,5 +1,5 @@
-use soroban_sdk::{contracterror, String};
 use core::fmt;
+use soroban_sdk::{contracterror, String};
 
 #[contracterror]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -64,8 +64,15 @@ impl fmt::Display for HuntError {
             HuntError::Unauthorized => {
                 write!(f, "Unauthorized access")
             }
-            HuntError::InsufficientRewardPool { required, available } => {
-                write!(f, "Insufficient reward pool: required {}, available {}", required, available)
+            HuntError::InsufficientRewardPool {
+                required,
+                available,
+            } => {
+                write!(
+                    f,
+                    "Insufficient reward pool: required {}, available {}",
+                    required, available
+                )
             }
             HuntError::DuplicateRegistration { hunt_id } => {
                 write!(f, "Duplicate registration for hunt {}", hunt_id)
@@ -82,7 +89,6 @@ impl fmt::Display for HuntError {
         }
     }
 }
-
 
 impl From<HuntError> for HuntErrorCode {
     fn from(err: HuntError) -> Self {

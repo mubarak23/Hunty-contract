@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Address, String, Vec, Env};
+use soroban_sdk::{contracttype, Address, Env, String, Vec};
 
 #[contracttype]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -40,10 +40,10 @@ pub struct Hunt {
 pub struct Clue {
     pub clue_id: u32,
     pub question: String,
-    pub answer_hash: String, 
+    pub answer_hash: String,
     pub points: u32,
     pub is_required: bool,
-    pub hint: String, 
+    pub hint: String,
     pub has_location: bool,
     pub location: Location,
 }
@@ -112,8 +112,7 @@ impl PlayerProgress {
 
 impl Hunt {
     pub fn is_active(&self, current_time: u64) -> bool {
-        self.status == HuntStatus::Active 
-            && (self.end_time == 0 || current_time < self.end_time)
+        self.status == HuntStatus::Active && (self.end_time == 0 || current_time < self.end_time)
     }
 
     pub fn has_rewards_available(&self) -> bool {
