@@ -131,6 +131,33 @@ impl HuntyCore {
             .publish((Symbol::new(&env, "HuntActivated"), hunt_id), event);
         Ok(())
     }
+
+    pub fn deactivate_hunt(env: Env, hunt_id: u64) -> Result<(), HuntErrorCode> {
+        // Load hunt
+        let mut hunt = Storage::get_hunt(&env, hunt_id).ok_or(HuntErrorCode::HuntNotFound)?;
+
+        // Verify caller is creator
+        let caller = env.invoker();
+        if caller != hunt.creator {
+            return Err(HuntErrorCode::Unauthorized);
+        }
+
+        // Check hunt is Active
+        if hunt.status != HuntStatus::Active {
+            return Err(HuntErrorCode::InvalidHuntStatus);
+        }
+
+        hunt.status = HuntStatus::Draft;
+
+        Storage::save_hunt(&env, &hunt);
+
+        let event = HuntDeactivatedEvent { hunt_id };
+
+        env.events()
+            .publish((Symbol::new(&env, "HuntDeactivated"), hunt_id), event);
+
+        Ok(())
+    }
 }
 
 mod errors;

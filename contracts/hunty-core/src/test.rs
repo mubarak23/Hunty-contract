@@ -502,4 +502,78 @@ mod test {
             assert_eq!(err, HuntErrorCode::NoCluesAdded);
         });
     }
+
+    #[test]
+    fn test_deactivate_hunt_success() {
+        let env = Env::default();
+        env.ledger().set_timestamp(1_700_002_000);
+
+        let creator = Address::generate(&env);
+
+        with_core_contract(&env, |env, _cid| {
+            // Create hunt
+            let hunt_id = HuntyCore::create_hunt(
+                env.clone(),
+                creator.clone(),
+                String::from_str(env, "Test Hunt"),
+                String::from_str(env, "Test description"),
+                None,
+                None,
+            )
+            .unwrap();
+
+            Storage::increment_total_clues(env, hunt_id);
+            env.set_invoker(creator.clone());
+            HuntyCore::activate_hunt(env.clone(), hunt_id).unwrap();
+
+            // Deactivate
+            HuntyCore::deactivate_hunt(env.clone(), hunt_id).unwrap();
+
+            let hunt = Storage::get_hunt(env, hunt_id).unwrap();
+            assert_eq!(hunt.status, HuntStatus::Paused);
+        });
+    }
+
+    #[test]
+    fn test_deactivate_hunt_not_found() {
+        let env = Env::default();
+        let creator = Address::generate(&env);
+
+        with_core_contract(&env, |env, _cid| {
+            env.set_invoker(creator);
+
+            let err = HuntyCore::deactivate_hunt(env.clone(), 404).unwrap_err();
+            assert_eq!(err, HuntErrorCode::HuntNotFound);
+        });
+    }
+
+    #[test]
+    fn test_deactivate_hunt_unauthorized() {
+        let env = Env::default();
+        let creator = Address::generate(&env);
+        let attacker = Address::generate(&env);
+
+        with_core_contract(&env, |env, _cid| {
+            let hunt_id = HuntyCore::create_hunt(
+                env.clone(),
+                creator.clone(),
+                String::from_str(env, "Hunt"),
+                String::from_str(env, "Desc"),
+                None,
+                None,
+            )
+            .unwrap();
+
+            Storage::increment_total_clues(env, hunt_id);
+
+            env.set_invoker(creator.clone());
+            HuntyCore::activate_hunt(env.clone(), hunt_id).unwrap();
+
+            // Attacker tries to deactivate
+            env.set_invoker(attacker);
+
+            let err = HuntyCore::deactivate_hunt(env.clone(), hunt_id).unwrap_err();
+            assert_eq!(err, HuntErrorCode::Unauthorized);
+        });
+    }
 }
