@@ -158,6 +158,46 @@ impl HuntyCore {
 
         Ok(())
     }
+
+    pub fn cancel_hunt(env: Env, hunt_id: u64) -> Result<(), HuntErrorCode> {
+        // Load hunt
+        let mut hunt = Storage::get_hunt(&env, hunt_id).ok_or(HuntErrorCode::HuntNotFound)?;
+
+        // Verify caller is creator
+        let caller = env.invoker();
+        if caller != hunt.creator {
+            return Err(HuntErrorCode::Unauthorized);
+        }
+
+        // Cannot cancel a completed hunt
+        if hunt.status == HuntStatus::Completed {
+            return Err(HuntErrorCode::InvalidHuntStatus);
+        }
+
+        // If already cancelled, treat as invalid
+        if hunt.status == HuntStatus::Cancelled {
+            return Err(HuntErrorCode::InvalidHuntStatus);
+        }
+
+        // Handle refunds if reward pool was funded
+        // TODO - HANDLE REFUND 
+
+
+        // Cancel hunt
+        hunt.status = HuntStatus::Cancelled;
+
+        // Persist
+        Storage::save_hunt(&env, &hunt);
+
+        // Emit event
+        let event = HuntCancelledEvent { hunt_id };
+
+        env.events()
+            .publish((Symbol::new(&env, "HuntCancelled"), hunt_id), event);
+
+        Ok(())
+    }
+
 }
 
 mod errors;
